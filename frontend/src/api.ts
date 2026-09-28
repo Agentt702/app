@@ -36,6 +36,29 @@ export type Quiz = {
   explanation: string;
 };
 
+export type LevelQuestion = {
+  id: string;
+  question: string;
+  options: string[];
+  answer: number;
+  explanation: string;
+  tier: string;
+};
+
+export type LevelResponse = {
+  level: number;
+  total_levels: number;
+  questions: LevelQuestion[];
+};
+
+export type LevelProgress = {
+  device_id: string;
+  current_level: number;
+  total_levels: number;
+  total_stars: number;
+  levels: Record<string, { stars: number; correct: number; completed_at?: string }>;
+};
+
 export type Surah = {
   number: number;
   name: string;
@@ -92,6 +115,14 @@ export const api = {
   },
   listSurahs: () => get<Surah[]>(`/quran/surahs`),
   getSurah: (n: number) => get<SurahDetail>(`/quran/surah/${n}`),
+  getLevel: (n: number) => get<LevelResponse>(`/kids/level/${n}`),
+  getKidsProgress: (deviceId: string) =>
+    get<LevelProgress>(`/kids/progress?device_id=${deviceId}`),
+  completeLevel: (deviceId: string, level: number, correct: number) =>
+    post<{ passed: boolean; stars: number; current_level: number }>(
+      `/kids/level/complete`,
+      { device_id: deviceId, level, correct },
+    ),
 };
 
 export function absAudioUrl(path: string) {

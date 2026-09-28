@@ -13,6 +13,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
 
 from prophets_data import PROPHETS, MIRACLE_OF_DAY_ITEMS, KIDS_QUIZZES
+from skill_tree import questions_for_level, TOTAL_LEVELS
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -162,6 +163,117 @@ async def story_of_the_day():
 @api_router.get("/kids/quizzes", response_model=List[QuizItem])
 async def kids_quizzes():
     return [QuizItem(**q) for q in KIDS_QUIZZES]
+
+
+# ----- Skill Tree (100 levels) -----
+class LevelQuestion(BaseModel):
+    id: str
+    question: str
+    options: List[str]
+    answer: int
+    explanation: str = ""
+    tier: str = ""
+
+
+class LevelResponse(BaseModel):
+    level: int
+    total_levels: int
+    questions: List[LevelQuestion]
+
+
+class LevelCompletePayload(BaseModel):
+    device_id: str
+    level: int
+    correct: int
+
+
+class LevelCompleteResponse(BaseModel):
+    passed: bool
+    stars: int
+    current_level: int
+
+
+class ProgressResponse(BaseModel):
+    device_id: str
+    current_level: int
+    total_levels: int
+    total_stars: int
+    levels: dict
+
+
+def _stars_for_correct(correct: int) -> int:
+    if correct >= 9:
+        return 3
+    if correct >= 7:
+        return 2
+    if correct >= 5:
+        return 1
+    return 0
+
+
+@api_router.get("/kids/level/{level}", response_model=LevelResponse)
+async def get_level(level: int):
+    if level < 1 or level > TOTAL_LEVELS:
+        raise HTTPException(status_code=400, detail="invalid level")
+    qs = questions_for_level(level)
+    return LevelResponse(
+        level=level,
+        total_levels=TOTAL_LEVELS,
+        questions=[LevelQuestion(**q) for q in qs],
+    )
+
+
+@api_router.get("/kids/progress", response_model=ProgressResponse)
+async def get_progress(device_id: str):
+    doc = await db.kids_progress.find_one({"device_id": device_id}, {"_id": 0})
+    if not doc:
+        return ProgressResponse(
+            device_id=device_id, current_level=1, total_levels=TOTAL_LEVELS,
+            total_stars=0, levels={},
+        )
+    levels = doc.get("levels", {}) or {}
+    total_stars = sum(int(v.get("stars", 0)) for v in levels.values())
+    return ProgressResponse(
+        device_id=device_id,
+        current_level=int(doc.get("current_level", 1)),
+        total_levels=TOTAL_LEVELS,
+        total_stars=total_stars,
+        levels=levels,
+    )
+
+
+@api_router.post("/kids/level/complete", response_model=LevelCompleteResponse)
+async def complete_level(payload: LevelCompletePayload):
+    if payload.level < 1 or payload.level > TOTAL_LEVELS:
+        raise HTTPException(status_code=400, detail="invalid level")
+    correct = max(0, min(10, int(payload.correct)))
+    doc = await db.kids_progress.find_one(
+        {"device_id": payload.device_id}, {"_id": 0}
+    ) or {"device_id": payload.device_id, "current_level": 1, "levels": {}}
+
+    stars = _stars_for_correct(correct)
+    passed = correct >= 6  # need 6/10 to advance
+    levels = doc.get("levels", {}) or {}
+    prev_stars = int(levels.get(str(payload.level), {}).get("stars", 0))
+    levels[str(payload.level)] = {
+        "stars": max(prev_stars, stars),
+        "correct": correct,
+        "completed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    doc["levels"] = levels
+    current_level = int(doc.get("current_level", 1))
+    if passed and payload.level >= current_level:
+        current_level = min(TOTAL_LEVELS, payload.level + 1)
+    doc["current_level"] = current_level
+
+    await db.kids_progress.update_one(
+        {"device_id": payload.device_id},
+        {"$set": {"current_level": current_level, "levels": levels}},
+        upsert=True,
+    )
+    return LevelCompleteResponse(
+        passed=passed, stars=stars, current_level=current_level,
+    )
 
 
 @api_router.get("/kids/stories", response_model=List[dict])
