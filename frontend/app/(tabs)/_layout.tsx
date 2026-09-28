@@ -41,20 +41,20 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="quran"
+          options={{
+            title: "المصحف",
+            tabBarIcon: ({ color, size }) => (
+              <Feather name="book" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="kids"
           options={{
             title: "الأطفال",
             tabBarIcon: ({ color, size }) => (
               <Feather name="smile" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="bookmarks"
-          options={{
-            title: "المفضلة",
-            tabBarIcon: ({ color, size }) => (
-              <Feather name="bookmark" size={size} color={color} />
             ),
           }}
         />

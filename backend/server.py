@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Optional
 
+import httpx
 from fastapi import FastAPI, APIRouter, HTTPException, Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -243,7 +244,62 @@ async def serve_tts(key: str):
     )
 
 
+# ----- Quran endpoints (proxying alquran.cloud, cached in-memory) -----
+QURAN_BASE = "https://api.alquran.cloud/v1"
+_surahs_cache: Optional[List[dict]] = None
+_surah_cache: dict = {}
+
+
+@api_router.get("/quran/surahs")
+async def quran_surahs():
+    global _surahs_cache
+    if _surahs_cache is not None:
+        return _surahs_cache
+    async with httpx.AsyncClient(timeout=15) as c:
+        r = await c.get(f"{QURAN_BASE}/surah")
+        r.raise_for_status()
+        data = r.json().get("data", [])
+        _surahs_cache = [
+            {
+                "number": s["number"],
+                "name": s["name"],
+                "englishName": s["englishName"],
+                "englishNameTranslation": s["englishNameTranslation"],
+                "numberOfAyahs": s["numberOfAyahs"],
+                "revelationType": s["revelationType"],
+            }
+            for s in data
+        ]
+        return _surahs_cache
+
+
+@api_router.get("/quran/surah/{number}")
+async def quran_surah(number: int):
+    if number < 1 or number > 114:
+        raise HTTPException(status_code=400, detail="invalid surah number")
+    if number in _surah_cache:
+        return _surah_cache[number]
+    async with httpx.AsyncClient(timeout=20) as c:
+        r = await c.get(f"{QURAN_BASE}/surah/{number}/quran-uthmani")
+        r.raise_for_status()
+        data = r.json().get("data", {})
+        result = {
+            "number": data.get("number"),
+            "name": data.get("name"),
+            "englishName": data.get("englishName"),
+            "englishNameTranslation": data.get("englishNameTranslation"),
+            "revelationType": data.get("revelationType"),
+            "ayahs": [
+                {"number": a.get("numberInSurah"), "text": a.get("text")}
+                for a in data.get("ayahs", [])
+            ],
+        }
+        _surah_cache[number] = result
+        return result
+
+
 app.include_router(api_router)
+
 
 app.add_middleware(
     CORSMiddleware,

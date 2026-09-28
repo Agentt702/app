@@ -17,8 +17,19 @@ import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
 const useStyles = makeStyles((colors) => ({
   header: {
-    paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1, borderBottomColor: colors.divider,
+  },
+  headerInner: { flex: 1 },
+  back: {
+    width: 40, height: 40, borderRadius: radius.pill,
+    backgroundColor: colors.surfaceSecondary,
+    borderWidth: 1, borderColor: colors.border,
+    alignItems: "center", justifyContent: "center",
   },
   title: { fontFamily: fonts.displayBold, fontSize: 30, color: colors.brandPrimary, textAlign: "right" },
   subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 2, textAlign: "right" },
@@ -73,8 +84,13 @@ export default function BookmarksTab() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.title}>المفضلة</Text>
-        <Text style={styles.subtitle}>القصص التي حفظتها للرجوع إليها</Text>
+        <Pressable testID="bookmarks-back" onPress={() => router.back()} style={styles.back}>
+          <Feather name="chevron-right" size={22} color={colors.onSurface} />
+        </Pressable>
+        <View style={styles.headerInner}>
+          <Text style={styles.title}>المفضلة</Text>
+          <Text style={styles.subtitle}>القصص التي حفظتها للرجوع إليها</Text>
+        </View>
       </View>
 
       {bmQ.isLoading || listQ.isLoading ? (

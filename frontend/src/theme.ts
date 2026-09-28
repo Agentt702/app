@@ -39,38 +39,39 @@ const light = {
   divider: "#EAE4D9",
 };
 
+// Pure black dark theme
 const dark: typeof light = {
-  surface: "#141210",
-  onSurface: "#F5F0E6",
-  surfaceSecondary: "#1F1B17",
-  onSurfaceSecondary: "#E7E0D2",
-  surfaceTertiary: "#2A241F",
-  onSurfaceTertiary: "#D4CAB6",
-  surfaceInverse: "#FDFBF7",
-  onSurfaceInverse: "#1C1917",
-  muted: "#A39685",
+  surface: "#000000",
+  onSurface: "#F5F5F5",
+  surfaceSecondary: "#0F0F0F",
+  onSurfaceSecondary: "#E5E5E5",
+  surfaceTertiary: "#1A1A1A",
+  onSurfaceTertiary: "#D4D4D4",
+  surfaceInverse: "#F5F5F5",
+  onSurfaceInverse: "#0A0A0A",
+  muted: "#8A8A8A",
 
-  brand: "#5C8A6F",
-  onBrand: "#0B0A08",
-  brandPrimary: "#6FA184",
-  onBrandPrimary: "#0B0A08",
-  brandSecondary: "#D4AA76",
-  onBrandSecondary: "#0B0A08",
-  brandTertiary: "#2E2A24",
-  onBrandTertiary: "#D4AA76",
+  brand: "#3B7A5F",
+  onBrand: "#F5F5F5",
+  brandPrimary: "#3B7A5F",
+  onBrandPrimary: "#F5F5F5",
+  brandSecondary: "#B38A58",
+  onBrandSecondary: "#0A0A0A",
+  brandTertiary: "#1A1A1A",
+  onBrandTertiary: "#B38A58",
 
-  success: "#6FA184",
-  onSuccess: "#0B0A08",
-  warning: "#D4AA76",
-  onWarning: "#0B0A08",
-  error: "#D97878",
-  onError: "#0B0A08",
-  info: "#7AA5B4",
-  onInfo: "#0B0A08",
+  success: "#3B7A5F",
+  onSuccess: "#F5F5F5",
+  warning: "#B38A58",
+  onWarning: "#0A0A0A",
+  error: "#B84B4B",
+  onError: "#F5F5F5",
+  info: "#4A7A8A",
+  onInfo: "#F5F5F5",
 
-  border: "#2A241F",
-  borderStrong: "#3A332C",
-  divider: "#2A241F",
+  border: "#1F1F1F",
+  borderStrong: "#2A2A2A",
+  divider: "#1F1F1F",
 };
 
 export type ThemeColors = typeof light;
@@ -109,7 +110,7 @@ export async function loadThemePref(): Promise<ThemePref> {
 
 function applyPref(pref: ThemePref) {
   try {
-    Appearance.setColorScheme?.(pref === "system" ? "unspecified" as any : pref);
+    Appearance.setColorScheme?.(pref === "system" ? ("unspecified" as any) : pref);
   } catch {}
 }
 
@@ -120,10 +121,6 @@ export async function setThemePref(pref: ThemePref) {
   } catch {}
   applyPref(pref);
   listeners.forEach((l) => l());
-}
-
-export function getThemePref(): ThemePref {
-  return currentPref;
 }
 
 export function useThemePref(): ThemePref {
@@ -144,11 +141,12 @@ export function useTheme(): { scheme: ColorScheme; colors: ThemeColors } {
   const scheme: ColorScheme =
     pref === "light" || pref === "dark"
       ? pref
-      : (system === "dark" ? "dark" : "light");
+      : system === "dark"
+        ? "dark"
+        : "light";
   return { scheme, colors: themes[scheme] };
 }
 
-// Static export kept for legacy imports. Prefer useTheme() in components.
 export const colors = themes.light;
 
 export function makeStyles<T extends StyleSheet.NamedStyles<T> | StyleSheet.NamedStyles<any>>(

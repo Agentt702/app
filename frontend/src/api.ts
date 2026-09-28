@@ -36,6 +36,19 @@ export type Quiz = {
   explanation: string;
 };
 
+export type Surah = {
+  number: number;
+  name: string;
+  englishName: string;
+  englishNameTranslation: string;
+  numberOfAyahs: number;
+  revelationType: string;
+};
+
+export type SurahDetail = Surah & {
+  ayahs: { number: number; text: string }[];
+};
+
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -77,6 +90,8 @@ export const api = {
       { method: "DELETE" },
     );
   },
+  listSurahs: () => get<Surah[]>(`/quran/surahs`),
+  getSurah: (n: number) => get<SurahDetail>(`/quran/surah/${n}`),
 };
 
 export function absAudioUrl(path: string) {
