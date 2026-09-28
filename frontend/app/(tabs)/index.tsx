@@ -172,9 +172,6 @@ export default function Home() {
       >
         <View style={styles.header}>
           <View style={styles.brandRow}>
-            <View style={styles.moonLogo}>
-              <Feather name="moon" size={26} color={colors.brandSecondary} />
-            </View>
             <View>
               <Text style={styles.appTitle}>قصص الأنبياء</Text>
               <Text style={styles.appSubtitle}>سِيَر المرسلين والمصحف الشريف</Text>
