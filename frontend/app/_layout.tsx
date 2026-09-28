@@ -9,7 +9,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { ErrorBoundary } from "@/src/components/error-boundary";
 import { queryClient } from "@/src/query-client";
-import { colors } from "@/src/theme";
+import { loadThemePref, useTheme } from "@/src/theme";
 
 LogBox.ignoreAllLogs(true);
 
@@ -47,9 +47,10 @@ async function loadFonts() {
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
+  const { colors } = useTheme();
 
   useEffect(() => {
-    loadFonts().finally(() => setReady(true));
+    Promise.all([loadFonts(), loadThemePref()]).finally(() => setReady(true));
   }, []);
 
   if (!ready) {

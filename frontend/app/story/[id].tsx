@@ -19,18 +19,77 @@ import { WebView } from "react-native-webview";
 import { absAudioUrl, api, youtubeSearchUrl } from "@/src/api";
 import { audioStore, useAudioState } from "@/src/audio-store";
 import { getDeviceId } from "@/src/device";
-import { colors, fonts, radius, spacing } from "@/src/theme";
+import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
 const HERO_FALLBACK =
   "https://images.unsplash.com/photo-1772289935653-f5a7950205cf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwzfHxEZXNlcnQlMjBtb3VudGFpbnMlMjBzdGFycnklMjBza3klMjBjYWxtJTIwbGFuZHNjYXBlfGVufDB8fHx8MTc5MDYyODY3OXww&ixlib=rb-4.1.0&q=85";
 
 type Section = "story" | "miracles" | "lessons" | "video";
 
+const useStyles = makeStyles((colors) => ({
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  hero: { height: 320, overflow: "hidden", justifyContent: "flex-end" },
+  heroTop: {
+    position: "absolute", top: 0, left: 0, right: 0,
+    padding: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+  },
+  iconBtn: {
+    width: 40, height: 40, borderRadius: radius.pill,
+    backgroundColor: "rgba(28,25,23,0.4)",
+    alignItems: "center", justifyContent: "center",
+  },
+  heroBody: { padding: spacing.lg },
+  heroEra: {
+    color: colors.brandSecondary, fontFamily: fonts.bodyBold, fontSize: 12,
+    letterSpacing: 1, marginBottom: spacing.sm, textAlign: "right",
+  },
+  heroName: { fontFamily: fonts.displayBold, fontSize: 40, color: "#FDFBF7", textAlign: "right", lineHeight: 52 },
+  heroLoc: { fontFamily: fonts.body, color: "#EAE4D9", fontSize: 14, marginTop: spacing.xs, textAlign: "right" },
+  body: { padding: spacing.lg, gap: spacing.md },
+  blockTitle: { fontFamily: fonts.displayBold, fontSize: 22, color: colors.brandPrimary, marginBottom: spacing.sm, textAlign: "right" },
+  summary: {
+    fontFamily: fonts.bodySemi, fontSize: 16, color: colors.onSurfaceSecondary,
+    lineHeight: 28, textAlign: "right", fontStyle: "italic",
+  },
+  story: { fontFamily: fonts.body, fontSize: 16, color: colors.onSurface, lineHeight: 32, textAlign: "right" },
+  videoBox: { height: 220, borderRadius: radius.md, overflow: "hidden", backgroundColor: "#000" },
+  videoFallback: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    backgroundColor: colors.surfaceSecondary, gap: spacing.sm, padding: spacing.lg,
+  },
+  videoFallbackTxt: { fontFamily: fonts.body, color: colors.muted, textAlign: "center" },
+  videoNote: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: spacing.sm, textAlign: "right" },
+  item: {
+    flexDirection: "row", gap: spacing.md, alignItems: "flex-start",
+    padding: spacing.md, backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.md, borderWidth: 1, borderColor: colors.border,
+  },
+  itemBullet: {
+    width: 28, height: 28, borderRadius: radius.pill,
+    backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center",
+  },
+  itemText: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.onSurfaceSecondary, lineHeight: 26, textAlign: "right" },
+  fab: {
+    position: "absolute", left: spacing.lg, flexDirection: "row", alignItems: "center", gap: spacing.sm,
+    backgroundColor: colors.brandPrimary, paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
+    borderRadius: radius.pill,
+    shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+  },
+  fabTxt: { fontFamily: fonts.bodyBold, color: colors.onBrand, fontSize: 14 },
+  chip: { height: 36, paddingHorizontal: spacing.lg, borderRadius: radius.pill, alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  chipActive: { backgroundColor: colors.brandPrimary },
+  chipIdle: { backgroundColor: colors.surfaceSecondary },
+  chipActiveTxt: { fontFamily: fonts.bodySemi, color: colors.onBrand, fontSize: 13 },
+  chipIdleTxt: { fontFamily: fonts.bodySemi, color: colors.onSurfaceSecondary, fontSize: 13 },
+}));
+
 export default function StoryDetail() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const qc = useQueryClient();
+  const styles = useStyles();
+  const { colors } = useTheme();
 
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [section, setSection] = useState<Section>("story");
@@ -67,54 +126,34 @@ export default function StoryDetail() {
       if (!prophetQ.data) return;
       const text = `${prophetQ.data.name_ar}. ${prophetQ.data.story}`;
       const res = await api.ttsGenerate(text);
-      await audioStore.load(
-        absAudioUrl(res.audio_url),
-        prophetQ.data.name_ar,
-        text,
-      );
+      await audioStore.load(absAudioUrl(res.audio_url), prophetQ.data.name_ar, text);
     },
   });
 
   if (prophetQ.isLoading || !prophetQ.data) {
     return (
-      <View style={[styles.center, { paddingTop: insets.top + spacing.xl }]}>
+      <View style={[styles.center, { paddingTop: insets.top + spacing.xl, backgroundColor: colors.surface }]}>
         <ActivityIndicator color={colors.brandPrimary} />
       </View>
     );
   }
 
   const p = prophetQ.data;
-  const isCurrentAudio =
-    audio.currentTitle === p.name_ar && !!audio.currentUrl;
+  const isCurrentAudio = audio.currentTitle === p.name_ar && !!audio.currentUrl;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: spacing.xxxl + 80 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero */}
+      <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxxl + 80 }} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <Image source={{ uri: HERO_FALLBACK }} style={StyleSheet.absoluteFill} contentFit="cover" />
-          <LinearGradient
-            colors={["rgba(28,25,23,0.35)", "rgba(28,25,23,0.9)"]}
-            style={StyleSheet.absoluteFill}
-          />
+          <LinearGradient colors={["rgba(28,25,23,0.35)", "rgba(28,25,23,0.9)"]} style={StyleSheet.absoluteFill} />
 
           <View style={[styles.heroTop, { paddingTop: insets.top + spacing.sm }]}>
             <Pressable testID="back-btn" onPress={() => router.back()} style={styles.iconBtn}>
-              <Feather name="chevron-right" size={22} color={colors.onSurfaceInverse} />
+              <Feather name="chevron-right" size={22} color="#FDFBF7" />
             </Pressable>
-            <Pressable
-              testID="bookmark-btn"
-              onPress={() => toggleBookmark.mutate()}
-              style={styles.iconBtn}
-            >
-              <Feather
-                name="bookmark"
-                size={20}
-                color={isBookmarked ? colors.brandSecondary : colors.onSurfaceInverse}
-              />
+            <Pressable testID="bookmark-btn" onPress={() => toggleBookmark.mutate()} style={styles.iconBtn}>
+              <Feather name="bookmark" size={20} color={isBookmarked ? colors.brandSecondary : "#FDFBF7"} />
             </Pressable>
           </View>
 
@@ -125,7 +164,6 @@ export default function StoryDetail() {
           </View>
         </View>
 
-        {/* Section tabs */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -149,11 +187,9 @@ export default function StoryDetail() {
             <Text style={styles.blockTitle}>مقاطع ذات صلة من يوتيوب</Text>
             <View style={styles.videoBox}>
               {Platform.OS === "web" ? (
-                <View style={[styles.videoFallback]}>
+                <View style={styles.videoFallback}>
                   <Feather name="youtube" size={36} color={colors.brandPrimary} />
-                  <Text style={styles.videoFallbackTxt}>
-                    اضغط للاستماع أو استخدم تطبيق الجوال لمشاهدة الفيديو
-                  </Text>
+                  <Text style={styles.videoFallbackTxt}>افتح التطبيق على الجوّال لمشاهدة الفيديو</Text>
                 </View>
               ) : (
                 <WebView
@@ -166,9 +202,7 @@ export default function StoryDetail() {
                 />
               )}
             </View>
-            <Text style={styles.videoNote}>
-              يتم البحث عن قصة {p.name_short} تلقائيًا في يوتيوب.
-            </Text>
+            <Text style={styles.videoNote}>يتم البحث عن قصة {p.name_short} تلقائيًا في يوتيوب.</Text>
           </View>
         )}
 
@@ -201,7 +235,6 @@ export default function StoryDetail() {
         )}
       </ScrollView>
 
-      {/* Floating Listen button */}
       <Pressable
         testID="listen-fab"
         onPress={() => {
@@ -213,186 +246,19 @@ export default function StoryDetail() {
         {ttsMut.isPending || (audio.loading && isCurrentAudio) ? (
           <ActivityIndicator color={colors.onBrand} />
         ) : (
-          <Feather
-            name={isCurrentAudio && audio.playing ? "pause" : "play"}
-            size={20}
-            color={colors.onBrand}
-          />
+          <Feather name={isCurrentAudio && audio.playing ? "pause" : "play"} size={20} color={colors.onBrand} />
         )}
-        <Text style={styles.fabTxt}>
-          {isCurrentAudio && audio.playing ? "إيقاف" : "استمع للقصة"}
-        </Text>
+        <Text style={styles.fabTxt}>{isCurrentAudio && audio.playing ? "إيقاف" : "استمع للقصة"}</Text>
       </Pressable>
     </View>
   );
 }
 
 function SectionChip({ active, label, onPress, testID }: any) {
+  const styles = useStyles();
   return (
-    <Pressable
-      testID={testID}
-      onPress={onPress}
-      style={{
-        height: 36,
-        paddingHorizontal: spacing.lg,
-        borderRadius: radius.pill,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: active ? colors.brandPrimary : colors.surfaceSecondary,
-        flexShrink: 0,
-      }}
-    >
-      <Text
-        style={{
-          fontFamily: fonts.bodySemi,
-          color: active ? colors.onBrand : colors.onSurfaceSecondary,
-          fontSize: 13,
-        }}
-      >
-        {label}
-      </Text>
+    <Pressable testID={testID} onPress={onPress} style={[styles.chip, active ? styles.chipActive : styles.chipIdle]}>
+      <Text style={active ? styles.chipActiveTxt : styles.chipIdleTxt}>{label}</Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  hero: {
-    height: 320,
-    overflow: "hidden",
-    justifyContent: "flex-end",
-  },
-  heroTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.pill,
-    backgroundColor: "rgba(28,25,23,0.4)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroBody: { padding: spacing.lg },
-  heroEra: {
-    color: colors.brandSecondary,
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
-    textAlign: "right",
-  },
-  heroName: {
-    fontFamily: fonts.displayBold,
-    fontSize: 40,
-    color: colors.onSurfaceInverse,
-    textAlign: "right",
-    lineHeight: 52,
-  },
-  heroLoc: {
-    fontFamily: fonts.body,
-    color: "#EAE4D9",
-    fontSize: 14,
-    marginTop: spacing.xs,
-    textAlign: "right",
-  },
-  body: { padding: spacing.lg, gap: spacing.md },
-  blockTitle: {
-    fontFamily: fonts.displayBold,
-    fontSize: 22,
-    color: colors.brandPrimary,
-    marginBottom: spacing.sm,
-    textAlign: "right",
-  },
-  summary: {
-    fontFamily: fonts.bodySemi,
-    fontSize: 16,
-    color: colors.onSurfaceSecondary,
-    lineHeight: 28,
-    textAlign: "right",
-    fontStyle: "italic",
-  },
-  story: {
-    fontFamily: fonts.body,
-    fontSize: 16,
-    color: colors.onSurface,
-    lineHeight: 32,
-    textAlign: "right",
-  },
-  videoBox: {
-    height: 220,
-    borderRadius: radius.md,
-    overflow: "hidden",
-    backgroundColor: "#000",
-  },
-  videoFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceSecondary,
-    gap: spacing.sm,
-    padding: spacing.lg,
-  },
-  videoFallbackTxt: {
-    fontFamily: fonts.body,
-    color: colors.muted,
-    textAlign: "center",
-  },
-  videoNote: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.muted,
-    marginTop: spacing.sm,
-    textAlign: "right",
-  },
-  item: {
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "flex-start",
-    padding: spacing.md,
-    backgroundColor: colors.surfaceSecondary,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  itemBullet: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.pill,
-    backgroundColor: colors.brandTertiary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  itemText: {
-    flex: 1,
-    fontFamily: fonts.body,
-    fontSize: 15,
-    color: colors.onSurfaceSecondary,
-    lineHeight: 26,
-    textAlign: "right",
-  },
-  fab: {
-    position: "absolute",
-    left: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.brandPrimary,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  fabTxt: { fontFamily: fonts.bodyBold, color: colors.onBrand, fontSize: 14 },
-});

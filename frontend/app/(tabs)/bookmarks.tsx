@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -14,12 +13,44 @@ import Feather from "@react-native-vector-icons/feather";
 
 import { api, Prophet } from "@/src/api";
 import { getDeviceId } from "@/src/device";
-import { colors, fonts, radius, spacing } from "@/src/theme";
+import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
+
+const useStyles = makeStyles((colors) => ({
+  header: {
+    paddingHorizontal: spacing.lg, paddingBottom: spacing.md,
+    borderBottomWidth: 1, borderBottomColor: colors.divider,
+  },
+  title: { fontFamily: fonts.displayBold, fontSize: 30, color: colors.brandPrimary, textAlign: "right" },
+  subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 2, textAlign: "right" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.xxl, gap: spacing.md },
+  emptyTitle: { fontFamily: fonts.displayBold, fontSize: 22, color: colors.onSurface },
+  emptyText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 22 },
+  cta: {
+    marginTop: spacing.md, backgroundColor: colors.brandPrimary,
+    paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.pill,
+  },
+  ctaTxt: { color: colors.onBrand, fontFamily: fonts.bodyBold },
+  row: {
+    flexDirection: "row", alignItems: "center", gap: spacing.md,
+    paddingVertical: spacing.md, paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  badge: {
+    width: 44, height: 44, borderRadius: radius.pill,
+    backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center",
+  },
+  badgeTxt: { fontFamily: fonts.displayBold, fontSize: 16, color: colors.brandPrimary },
+  rowName: { fontFamily: fonts.displayBold, fontSize: 20, color: colors.onSurface, textAlign: "right" },
+  rowSub: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2, textAlign: "right" },
+}));
 
 export default function BookmarksTab() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const styles = useStyles();
+  const { colors } = useTheme();
 
   useEffect(() => {
     getDeviceId().then(setDeviceId);
@@ -57,11 +88,7 @@ export default function BookmarksTab() {
           <Text style={styles.emptyText}>
             اضغط على أيقونة الحفظ في أعلى أي قصة لإضافتها هنا.
           </Text>
-          <Pressable
-            testID="empty-goto-stories"
-            onPress={() => router.push("/(tabs)/stories")}
-            style={styles.cta}
-          >
+          <Pressable testID="empty-goto-stories" onPress={() => router.push("/(tabs)/stories")} style={styles.cta}>
             <Text style={styles.ctaTxt}>تصفح الأنبياء</Text>
           </Pressable>
         </View>
@@ -71,19 +98,13 @@ export default function BookmarksTab() {
           keyExtractor={(p) => p.id}
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm, paddingBottom: spacing.xxl }}
           renderItem={({ item }) => (
-            <Pressable
-              testID={`bookmark-${item.id}`}
-              onPress={() => router.push(`/story/${item.id}`)}
-              style={styles.row}
-            >
+            <Pressable testID={`bookmark-${item.id}`} onPress={() => router.push(`/story/${item.id}`)} style={styles.row}>
               <View style={styles.badge}>
                 <Text style={styles.badgeTxt}>{item.order}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowName}>{item.name_ar}</Text>
-                <Text style={styles.rowSub} numberOfLines={1}>
-                  {item.era}
-                </Text>
+                <Text style={styles.rowSub} numberOfLines={1}>{item.era}</Text>
               </View>
               <Feather name="chevron-left" size={20} color={colors.muted} />
             </Pressable>
@@ -93,43 +114,3 @@ export default function BookmarksTab() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  title: { fontFamily: fonts.displayBold, fontSize: 30, color: colors.brandPrimary, textAlign: "right" },
-  subtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 2, textAlign: "right" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.xxl, gap: spacing.md },
-  emptyTitle: { fontFamily: fonts.displayBold, fontSize: 22, color: colors.onSurface },
-  emptyText: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, textAlign: "center", lineHeight: 22 },
-  cta: {
-    marginTop: spacing.md,
-    backgroundColor: colors.brandPrimary,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-  },
-  ctaTxt: { color: colors.onBrand, fontFamily: fonts.bodyBold },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  badge: {
-    width: 44, height: 44, borderRadius: radius.pill,
-    backgroundColor: colors.brandTertiary, alignItems: "center", justifyContent: "center",
-  },
-  badgeTxt: { fontFamily: fonts.displayBold, fontSize: 16, color: colors.brandPrimary },
-  rowName: { fontFamily: fonts.displayBold, fontSize: 20, color: colors.onSurface, textAlign: "right" },
-  rowSub: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 2, textAlign: "right" },
-});

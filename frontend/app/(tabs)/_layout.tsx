@@ -1,10 +1,11 @@
 import { Tabs } from "expo-router";
 import Feather from "@react-native-vector-icons/feather";
 import { Platform, View } from "react-native";
-import { colors, fonts } from "@/src/theme";
+import { fonts, useTheme } from "@/src/theme";
 import MiniPlayer from "@/src/components/mini-player";
 
 export default function TabsLayout() {
+  const { colors } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <Tabs
