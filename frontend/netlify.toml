@@ -1,0 +1,17 @@
+[build]
+  base = "frontend"
+  command = "npm run build:web"
+  publish = "dist"
+  functions = "functions"
+
+# إعادة توجيه طلبات API إلى Netlify Functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# إعادة توجيه مسارات SPA الخاصة بـ Expo Web
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
