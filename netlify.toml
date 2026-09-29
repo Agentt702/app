@@ -1,0 +1,13 @@
+[build]
+  base = "frontend"
+  command = "npm run build:web"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+

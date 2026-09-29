@@ -31,7 +31,9 @@ class AudioStore {
 
   subscribe(l: Listener) {
     this.listeners.add(l);
-    return () => this.listeners.delete(l);
+    return () => {
+      this.listeners.delete(l);
+    };
   }
 
   private emit() {
